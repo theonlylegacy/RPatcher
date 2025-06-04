@@ -7,6 +7,7 @@ try:
     import zipfile
     import shutil
     import winshell
+    from win32com.client import Dispatch
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.common.by import By
@@ -104,9 +105,6 @@ def unzip_file(zip_filename, zip_path, extract_to):
     print(f"[PATCHER] Extracted \"{zip_filename}\"!")
 
 def create_shortcut(target_path, shortcut_name):
-    import winshell
-    from win32com.client import Dispatch
-
     start_menu = os.path.join(os.getenv("APPDATA"), r"Microsoft\Windows\Start Menu\Programs\Roblox")
     os.makedirs(start_menu, exist_ok=True)
 
