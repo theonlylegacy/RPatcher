@@ -20,10 +20,10 @@ try:
 except ImportError as error:
     print("[PATCHER] Building \"requirements.bat\"..")
 
-    bat_path = os.path.join(os.path.dirname(__file__), "requirements.bat")
+    path = os.path.join(os.path.dirname(__file__), "requirements.bat")
 
-    if not os.path.exists(bat_path):
-        with open(bat_path, "w") as f:
+    if not os.path.exists(path):
+        with open(path, "w") as f:
             f.write("pip install selenium\n")
             f.write("pip install winshell\n")
             f.write("pip install colorama\n")
@@ -32,7 +32,7 @@ except ImportError as error:
     print("[PATCHER] Built \"requirements.bat\"!")
 
     print("[PATCHER] Extracting libraries..")
-    subprocess.run(["cmd", "/c", bat_path])
+    subprocess.run(["cmd", "/c", path])
     print("[PATCHER] Extracted libraries!")
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
@@ -54,7 +54,6 @@ def get_roblox_directory():
 
 def configure_driver(download_path, headless=True):
     options = Options()
-    service = Service(log_path=os.devnull)
     prefs = {
         "download.default_directory": download_path,
         "download.prompt_for_download": False,
@@ -67,7 +66,7 @@ def configure_driver(download_path, headless=True):
     if headless:
         options.add_argument("--headless")
 
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = webdriver.Chrome(options=options)
     return driver
 
 def wait_for_log_element(driver, selector, timeout=20):
@@ -102,13 +101,13 @@ def cleanup_previous_versions(roblox_directory):
     if not os.path.exists(roblox_directory):
         return
 
-    for folder_name in os.listdir(roblox_directory):
-        folder_path = os.path.join(roblox_directory, folder_name)
+    for name in os.listdir(roblox_directory):
+        path = os.path.join(roblox_directory, name)
 
-        if os.path.isdir(folder_path) and os.path.isfile(os.path.join(folder_path, "RobloxPlayerBeta.exe")):
-            print(f"[PATCHER] Clearing previous version: \"{folder_name}\"..")
-            shutil.rmtree(folder_path)
-            print(f"[PATCHER] Cleared previous version: \"{folder_name}\"!")
+        if os.path.isdir(path) and os.path.isfile(os.path.join(path, "RobloxPlayerBeta.exe")):
+            print(f"[PATCHER] Clearing previous version: \"{name}\"..")
+            shutil.rmtree(path)
+            print(f"[PATCHER] Cleared previous version: \"{name}\"!")
 
 def cleanup_previous_shortcuts():
     start_menu = os.path.join(os.getenv("APPDATA"), r"Microsoft\Windows\Start Menu\Programs\Roblox")
