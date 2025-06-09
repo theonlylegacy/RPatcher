@@ -9,6 +9,7 @@ try:
     import shutil
     import winshell
     import psutil
+    import inquirer
     from colorama import Fore, init
     from win32com.client import Dispatch
     from selenium import webdriver
@@ -29,12 +30,13 @@ except ImportError as error:
             f.write("pip install winshell\n")
             f.write("pip install colorama\n")
             f.write("pip install psutil\n")
+            f.write("pip install inquirer\n")
     
-    print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + "Built \"requirements.bat\"!")
+    print(Fore.WHITE + "[PATCHER] Built \"requirements.bat\"!")
     print(Fore.WHITE + "[PATCHER] Extracting libraries..")
     subprocess.run(["cmd", "/c", path])
-    print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + "Extracted libraries!")
-    os.execv(sys.executable, [sys.executable] + sys.argv)
+    print(Fore.WHITE + "[PATCHER] Extracted libraries!")
+    os.execv(sys.executable, ["python"] + sys.argv)
 
 init(autoreset = True)
 
@@ -60,7 +62,7 @@ def configure_driver(download_path):
     options.add_argument("--headless")
 
     service = FirefoxService()
-    driver = webdriver.Firefox(service=service, options=options)
+    driver = webdriver.Firefox(service = service, options = options)
     return driver
 
 def get_log(driver, selector):
@@ -71,21 +73,20 @@ def get_log(driver, selector):
 
         return element
     except:
-        print(Fore.WHITE + "[PATCHER] " + Fore.RED + "Timed out")
         driver.quit()
-        os._exit(0)
+        sys.exit(0)
 
 def stream_console(element):
     printed_lines = set()
     stream_finished = False
 
-    for _ in range(30):
+    for _ in range(60):
         text = element.text
         lines = text.splitlines()
         new_lines = [line for line in lines if line not in printed_lines]
 
         for line in new_lines:
-            if line.strip().endswith("done!"):
+            if "Exporting assembled zip file" in line:
                 stream_finished = True
                 break
 
@@ -106,11 +107,11 @@ def wait_for_zip(zip_path):
         
         time.sleep(0.5)
 
-    print("[PATCHER] Timed out waiting for assembled zip file!")
+    print(Fore.WHITE + "[" + Fore.RED + "!" + Fore.WHITE + "] " + Fore.RED + f"Timed out waiting for assembled zip file \"{os.path.basename(zip_path)}\"!")
     time.sleep(5)
     os._exit(0)
 
-def cleanup_previous_versions(roblox_directory):
+def uninstall_previous_versions(roblox_directory):
     if not os.path.exists(roblox_directory):
         return
 
@@ -118,30 +119,30 @@ def cleanup_previous_versions(roblox_directory):
         path = os.path.join(roblox_directory, name)
         
         if os.path.isdir(path) and os.path.isfile(os.path.join(path, "RobloxPlayerBeta.exe")):
-            print(Fore.WHITE + f"[PATCHER] Clearing previous version: \"{name}\"..")
+            print(Fore.WHITE + f"[+] Uninstalling version: \"{name}\"..")
             shutil.rmtree(path)
-            print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + f"Cleared previous version: \"{name}\"!")
+            print(Fore.WHITE + f"[+] Uninstalled version: \"{name}\"!")
 
-def cleanup_previous_shortcuts():
+def remove_previous_shortcuts():
     start_menu = os.path.join(os.getenv("APPDATA"), r"Microsoft\Windows\Start Menu\Programs\Roblox")
     
     for name in os.listdir(start_menu):
         path = os.path.join(start_menu, name)
         
         if name == "Roblox Player.lnk" and os.path.isfile(path):
-            print(Fore.WHITE + f"[PATCHER] Clearing previous shortcut: \"{name}\"..")
+            print(Fore.WHITE + f"[+] Removing shortcut: \"{name}\"..")
             os.remove(path)
-            print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + f"Cleared previous shortcut \"{name}\"!")
+            print(Fore.WHITE + f"[+] Removed shortcut \"{name}\"!")
 
 def unzip_file(zip_filename, zip_path, extract_to):
-    print(Fore.WHITE + f"[PATCHER] Extracting \"{zip_filename}\"..")
+    print(Fore.WHITE + f"[+] Extracting \"{zip_filename}\"..")
 
     with zipfile.ZipFile(zip_path, "r") as zip_reference:
         zip_reference.extractall(extract_to)
     
     os.remove(zip_path)
     
-    print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + f"Extracted \"{zip_filename}\"!")
+    print(Fore.WHITE + f"[+] Extracted \"{zip_filename}\"!")
 
 def build_shortcut(path, name):
     start_menu = os.path.join(os.getenv("APPDATA"), r"Microsoft\Windows\Start Menu\Programs\Roblox")
@@ -154,53 +155,51 @@ def build_shortcut(path, name):
     shortcut.save()
 
 def main():
-    binary_type = input(Fore.WHITE + "[PATCHER] " + Fore.YELLOW + "BinaryType: ")
-    version_hash = input(Fore.WHITE + "[PATCHER] " + Fore.YELLOW + "Version: ")
-
-    print("")
-    print(Fore.WHITE + "[PATCHER] Configuring driver..")
+    binary_type = inquirer.prompt([inquirer.List("choice", message = Fore.YELLOW + "BinaryType", choices = ["WindowsPlayer", "WindowsStudio64", "MacPlayer", "MacStudio"])])
+    version_hash = input(Fore.WHITE + "[" + Fore.YELLOW + "?" + Fore.WHITE + "] " + Fore.YELLOW + "Version: " + Fore.WHITE)
 
     roblox_process = get_process("RobloxPlayerBeta.exe")
     if roblox_process:
-        print(Fore.WHITE + "[PATCHER] " + Fore.RED + "\"RobloxPlayerBeta.exe\" is running!")
+        print(Fore.WHITE + "[" + Fore.RED + "!" + Fore.WHITE + "] " + Fore.RED + "\"RobloxPlayerBeta.exe\" is running!")
         
-        close_process = input(Fore.YELLOW + "[PATCHER] Do you wish to terminate \"RobloxPlayerBeta.exe\"? (Y/N): ")
+        close_process = input(Fore.WHITE + "[" + Fore.YELLOW + "?" + Fore.WHITE + "] " + Fore.YELLOW + "Terminate \"RobloxPlayerBeta.exe\": " + Fore.WHITE)
         if close_process.upper() != "Y":
             os._exit(0)
         
-        print(Fore.WHITE + "[PATCHER] Terminating \"RobloxPlayerBeta.exe\"..")
+        print(Fore.WHITE + "[+] Terminating \"RobloxPlayerBeta.exe\"..")
         
         roblox_process.terminate()
         time.sleep(5)
         
-        print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + "Terminated \"RobloxPlayerBeta.exe\"!")
+        print(Fore.WHITE + "[+] Terminated \"RobloxPlayerBeta.exe\"!")
+
+    print("")
+    print(Fore.WHITE + "[+] Configuring driver..")
 
     roblox_directory = get_roblox_directory()
-    api_url = f"https://rdd.fuckass.site/?channel=LIVE&binaryType={binary_type}&version={version_hash}"
+    api_url = f"https://rdd.fuckass.site/?channel=LIVE&binaryType={binary_type["choice"]}&version={version_hash}"
     driver = configure_driver(roblox_directory)
     driver.get(api_url)
     
-    print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + "Configured driver!")
+    print(Fore.WHITE + "[+] Configured driver!")
     print("")
 
     stream_console(get_log(driver, "#consoleText"))
+    zip_path = os.path.join(roblox_directory, f"LIVE-{binary_type["choice"]}-version-{version_hash}.zip")
 
-    zip_name = f"LIVE-{binary_type}-version-{version_hash}.zip"
-    zip_path = os.path.join(roblox_directory, zip_name)
+    print(Fore.WHITE + f"[+] Exporting assembled zip file \"{os.path.basename(zip_path)}\"..")
     
     wait_for_zip(zip_path)
-    driver.quit()
-
     zip_directory = os.path.join(roblox_directory, f"version-{version_hash}")
 
-    print(Fore.WHITE + f"[+] Exported assembled zip file \"{zip_name}\"!")
+    print(Fore.WHITE + f"[+] Exported assembled zip file \"{os.path.basename(zip_path)}\"!")
     print("")
 
-    cleanup_previous_versions(roblox_directory)
-    print(Fore.WHITE + "[PATCHER] Building version folder..")
+    uninstall_previous_versions(roblox_directory)
+    print(Fore.WHITE + f"[+] Building version folder \"{os.path.basename(zip_directory)}\"..")
     os.makedirs(zip_directory, exist_ok=True)
-    print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + "Built version folder!")
-    unzip_file(zip_name, zip_path, zip_directory)
+    print(Fore.WHITE + f"[+] Built version folder \"{os.path.basename(zip_directory)}\"!")
+    unzip_file(os.path.basename(zip_path), zip_path, zip_directory)
 
     roblox_player = None
     for folder_name in os.listdir(roblox_directory):
@@ -212,14 +211,14 @@ def main():
             break
 
     if roblox_player:
-        cleanup_previous_shortcuts()
-        print(Fore.WHITE + "[PATCHER] Building shortcut \"Roblox Player.lnk\"..")
+        remove_previous_shortcuts()
+        print(Fore.WHITE + "[+] Building shortcut \"Roblox Player.lnk\"..")
         build_shortcut(roblox_player, "Roblox Player")
-        print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + "Built shortcut \"Roblox Player.lnk\"!")
+        print(Fore.WHITE + "[+] Built shortcut \"Roblox Player.lnk\"!")
     else:
-        print(Fore.WHITE + "[PATCHER] " + Fore.RED + "Error building shortcut \"Roblox Player.lnk\"!")
+        print(Fore.WHITE + "[" + Fore.RED + "!" + Fore.WHITE + "] " + Fore.RED + "Error building shortcut \"Roblox Player.lnk\"!")
 
-    print(Fore.WHITE + "[PATCHER] Building registry details..")
+    print(Fore.WHITE + "[+] Building registry details..")
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\roblox-player") as key:
         winreg.SetValueEx(key, None, 0, winreg.REG_SZ, "URL:Roblox Protocol")
         winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, "")
@@ -230,12 +229,12 @@ def main():
     with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\roblox-player\shell\open\command") as key:
         winreg.SetValueEx(key, None, 0, winreg.REG_SZ, f"\"{roblox_player}\" %1")
 
-    print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + "Built registry details!")
+    print(Fore.WHITE + "[+] Built registry details!")
     print("")
 
-    print(Fore.WHITE + "[PATCHER] " + Fore.GREEN + "Successfully patched Roblox!")
+    print(Fore.WHITE + "[" + Fore.GREEN + "!" + Fore.WHITE + "] " + Fore.GREEN + "Successfully patched Roblox!")
 
-    time.sleep(5)
-    os._exit(0)
+    driver.quit()
+    sys.exit(0)
 
 main()
