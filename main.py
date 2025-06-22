@@ -20,7 +20,7 @@ try:
     from selenium.webdriver.firefox.service import Service as FirefoxService
 
 except ImportError as error:
-    print(Fore.WHITE + "[PATCHER] Building \"requirements.bat\"..")
+    print(Fore.WHITE + "[+] Building \"requirements.bat\"..")
 
     path = os.path.join(os.path.dirname(__file__), "requirements.bat")
 
@@ -32,10 +32,10 @@ except ImportError as error:
             f.write("pip install psutil\n")
             f.write("pip install inquirer\n")
     
-    print(Fore.WHITE + "[PATCHER] Built \"requirements.bat\"!")
-    print(Fore.WHITE + "[PATCHER] Extracting libraries..")
+    print(Fore.WHITE + "[+] Built \"requirements.bat\"!")
+    print(Fore.WHITE + "[+] Extracting libraries..")
     subprocess.run(["cmd", "/c", path])
-    print(Fore.WHITE + "[PATCHER] Extracted libraries!")
+    print(Fore.WHITE + "[+] Extracted libraries!")
     os.execv(sys.executable, ["python"] + sys.argv)
 
 init(autoreset = True)
@@ -80,7 +80,7 @@ def stream_console(element):
     printed_lines = set()
     stream_finished = False
 
-    for _ in range(60):
+    for _ in range(40):
         text = element.text
         lines = text.splitlines()
         new_lines = [line for line in lines if line not in printed_lines]
@@ -109,7 +109,7 @@ def wait_for_zip(zip_path):
 
     print(Fore.WHITE + "[" + Fore.RED + "!" + Fore.WHITE + "] " + Fore.RED + f"Timed out waiting for assembled zip file \"{os.path.basename(zip_path)}\"!")
     time.sleep(5)
-    os._exit(0)
+    sys.exit(0)
 
 def uninstall_previous_versions(roblox_directory):
     if not os.path.exists(roblox_directory):
@@ -164,7 +164,7 @@ def main():
         
         close_process = input(Fore.WHITE + "[" + Fore.YELLOW + "?" + Fore.WHITE + "] " + Fore.YELLOW + "Terminate \"RobloxPlayerBeta.exe\": " + Fore.WHITE)
         if close_process.upper() != "Y":
-            os._exit(0)
+            sys.exit(0)
         
         print(Fore.WHITE + "[+] Terminating \"RobloxPlayerBeta.exe\"..")
         
@@ -187,6 +187,7 @@ def main():
     stream_console(get_log(driver, "#consoleText"))
     zip_path = os.path.join(roblox_directory, f"LIVE-{binary_type["choice"]}-version-{version_hash}.zip")
 
+    print("")
     print(Fore.WHITE + f"[+] Exporting assembled zip file \"{os.path.basename(zip_path)}\"..")
     
     wait_for_zip(zip_path)
