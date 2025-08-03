@@ -9,6 +9,7 @@ import psutil
 import inquirer
 import colorama
 import win32com.client
+import json
 import selenium
 import selenium.webdriver.firefox.options
 import selenium.webdriver.common.by
