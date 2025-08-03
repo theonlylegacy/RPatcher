@@ -4,6 +4,9 @@ import sys
 import os
 import importlib
 
+dependencies_list = []
+missing_packages = []
+
 def package_installed(import_name):
     try:
         importlib.import_module(import_name)
@@ -13,8 +16,6 @@ def package_installed(import_name):
 
 with open("dependencies.json") as file:
     dependencies_list = json.load(file)
-
-missing_packages = []
 
 for package in dependencies_list:
     if not package_installed(package["import_name"]):
