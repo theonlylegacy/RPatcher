@@ -1,0 +1,13 @@
+{
+    "WindowsPlayer": {
+        "executable": "RobloxPlayerBeta.exe",
+        "shortcut": "Roblox Player",
+        "protocol": "roblox-player"
+    },
+
+    "WindowsStudio64": {
+        "executable": "RobloxStudioBeta.exe",
+        "shortcut": "Roblox Studio",
+        "protocol": "roblox-studio"
+    }
+}
