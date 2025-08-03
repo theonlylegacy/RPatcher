@@ -5,6 +5,7 @@ import importlib
 subprocess.check_call([sys.executable, "installer.py"])
 imports = importlib.import_module("imports")
 
+json = imports.json
 win32com = imports.win32com
 selenium = imports.selenium
 colorama = imports.colorama
@@ -16,6 +17,9 @@ time = imports.time
 os = imports.os
 sys = imports.sys
 winreg = imports.winreg
+
+with open("configs.json") as file:
+    configs = json.load(file)
 
 def message(type, message, choices = []):
     if type == "i":
@@ -29,9 +33,6 @@ def message(type, message, choices = []):
 
     if type == "a":
         print(colorama.Fore.WHITE + "[" + colorama.Fore.RED + "!" + colorama.Fore.WHITE + "] " + colorama.Fore.RED + message)
-
-        time.sleep(5)
-        sys.exit(0)
 
     if type == "s":
         print(colorama.Fore.WHITE + "[" + colorama.Fore.GREEN + "!" + colorama.Fore.WHITE + "] " + colorama.Fore.GREEN + message)
@@ -121,8 +122,10 @@ def patch():
 
     binary_type = message("l", "BinaryType", ["WindowsPlayer", "WindowsStudio64"])
     version_hash = message("q", "Version")
-    process_name = binary_type["choice"] == "WindowsPlayer" and "RobloxPlayerBeta.exe" or binary_type["choice"] == "WindowsStudio64" and "RobloxStudioBeta.exe"
-    shortcut_name = binary_type["choice"] == "WindowsPlayer" and "Roblox Player" or binary_type["choice"] == "WindowsStudio64" and "Roblox Studio"
+    config = configs[binary_type["choice"]]
+    process_name = config["executable"]
+    shortcut_name = config["shortcut"]
+    protocol_name = config["protocol"]
     process = fetch_process(process_name)
 
     print("")
@@ -161,6 +164,7 @@ def patch():
 
     message("i", f"Building version directory \"{os.path.basename(package_directory)}\"")
     os.makedirs(package_directory, exist_ok = True)
+    message("i", f"Built version directory \"{os.path.basename(package_directory)}\"")
 
     message("i", f"Extracting package \"{os.path.basename(package_path)}\"")
 
@@ -193,19 +197,17 @@ def patch():
     else:
         message("a", f"Could not build shortcut \"{shortcut_name}\" for \"{process_name}\" because it does not exist")
 
-    message("i", "Editing registry details")
-
-    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\roblox-player") as key:
-        winreg.SetValueEx(key, None, 0, winreg.REG_SZ, "URL:Roblox Protocol")
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, fr"Software\Classes\{protocol_name}") as key:
+        winreg.SetValueEx(key, None, 0, winreg.REG_SZ, "URL: Roblox Protocol")
         winreg.SetValueEx(key, "URL Protocol", 0, winreg.REG_SZ, "")
 
-    winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\roblox-player\shell")
-    winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\roblox-player\shell\open")
+    winreg.CreateKey(winreg.HKEY_CURRENT_USER, fr"Software\Classes\{protocol_name}\shell")
+    winreg.CreateKey(winreg.HKEY_CURRENT_USER, fr"Software\Classes\{protocol_name}\shell\open")
 
-    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\roblox-player\shell\open\command") as key:
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, fr"Software\Classes\{protocol_name}\shell\open\command") as key:
         winreg.SetValueEx(key, None, 0, winreg.REG_SZ, f"\"{roblox_path}\" %1")
+        winreg.SetValueEx(key, "version", 0, winreg.REG_SZ, f"version-{version_hash}")
 
-    message("i", "Edited registry details")
     message("s", f"Successfully patched {process_name} to version {version_hash}")
 
     webdriver.quit()
