@@ -1,0 +1,36 @@
+[
+    {
+        "package_name": "winshell",
+        "import_name": "winshell"
+    },
+    
+    {
+        "package_name": "psutil",
+        "import_name": "psutil"
+    },
+    
+    {
+        "package_name": "inquirer",
+        "import_name": "inquirer"
+    },
+    
+    {
+        "package_name": "colorama",
+        "import_name": "colorama"
+    },
+    
+    {
+        "package_name": "pywin32",
+        "import_name": "win32com.client"
+    },
+
+    {
+        "package_name": "selenium",
+        "import_name": "selenium"
+    },
+
+    {
+        "package_name": "httpx",
+        "import_name": "httpx"
+    }
+]
